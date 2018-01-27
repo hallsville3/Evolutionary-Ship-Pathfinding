@@ -5,7 +5,6 @@
  */
 package genetic;
 
-import java.awt.Color;
 import javax.swing.JFrame;
 
 /**
@@ -43,16 +42,21 @@ public class Genetic {
         int gen = 1;
         double speed = 50;
         
-        int gen_skip = 500; //Generations between each displayed generation
+        int gen_skip = 100; //Generations between each displayed generation
         int score = 0;
+        
         score = pool.score_ships(frame, obstacles, end_time, dt, speed, true);
+        
         while (true) {
             gen += gen_skip + 1;
             frame.pause();
+            
+            //Do gen_skip generations between each displayed generation
             for (int i = 0; i<gen_skip; i++) {
                pool.score_ships(frame, obstacles, end_time, dt, speed, false);
                Thread.sleep(1);
             }
+            
             frame.resume();
             screen.setTitle("Generation: "+gen + " Best: " + score);
             score = pool.score_ships(frame, obstacles, end_time, dt, speed, true);

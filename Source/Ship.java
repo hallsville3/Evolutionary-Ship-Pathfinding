@@ -18,7 +18,7 @@ public class Ship implements Comparable<Ship> {
     double mass, score;
     int n_boosters, size, radius, punishment;
     Booster[] boosters;
-    boolean was_scored, alive;
+    boolean alive;
     double x, y, vx, vy, ax, ay;
 
     public Ship(double mass, Booster[] boosters, int size, int radius) {
@@ -26,7 +26,6 @@ public class Ship implements Comparable<Ship> {
         this.mass = mass;
         this.boosters = boosters;
         n_boosters = boosters.length;
-        was_scored = false;
         score = 0;
         alive = true;
 
@@ -46,6 +45,8 @@ public class Ship implements Comparable<Ship> {
     }
 
     public void reset_pva(int size, int radius) {
+        //Sets position to bottom center, and velocity/acceleration to 0
+        //Also notes screen size and radius of ship
         this.size = size;
         this.radius = radius;
         x = size / 2;
@@ -57,11 +58,13 @@ public class Ship implements Comparable<Ship> {
     }
 
     public int compareTo(Ship other) {
+        //Returns comparison of ship scores for purpose of sorting ships
         Double s = new Double(score);
         return s.compareTo(other.score);
     }
 
     public Ship copy() {
+        //Creates an exact copy of a ship with no shared pointers
         Booster[] new_boosters = new Booster[this.boosters.length];
         for (int i = 0; i < new_boosters.length; i++) {
             new_boosters[i] = this.boosters[i].copy();
@@ -70,29 +73,42 @@ public class Ship implements Comparable<Ship> {
     }
 
     public void populate_boosters() {
+        //Creates n_boosters random boosters in the ship
         for (int i = 0; i < n_boosters; i++) {
             boosters[i] = new Booster();
         }
     }
 
     public void sort_boosters() {
+        //Sorts boosters by angle for better breeding. Currently disabled
         return;
         //Arrays.sort(boosters);
     }
 
-    public Ship mate(Ship other, double variance) {
-        sort_boosters();
-        other.sort_boosters();
+    public Ship mate(Ship other, double variance) { 
+        /*
+        Creates a new "offspring" ship from two parent ships.
+        
+        If variance > a certain value, new ships will be more varied 
+            for increased mutation potential
+        */
+        
+        //sort_boosters();
+        //other.sort_boosters();
 
         double new_mass = Math.random() < .5 ? mass : other.mass;
+        
         Booster[] new_boosters = new Booster[Math.random() < .5 ? boosters.length : other.boosters.length];
+        
         int l1 = new_boosters.length;
         int length = Math.min(boosters.length, other.boosters.length);
-
+        
+        //Get new boosters from offspring of parents' boosters
         for (int i = 0; i < length; i++) {
             new_boosters[i] = boosters[i].mate(other.boosters[i]);
         }
 
+        //Fill in the booster "gaps" with parent boosters
         for (int i = 0; i < l1 - length; i++) {
             if (i + length < boosters.length && i + length < other.boosters.length) {
                 new_boosters[i + length] = Math.random() < .5 ? boosters[i + length] : other.boosters[i + length];
@@ -102,33 +118,39 @@ public class Ship implements Comparable<Ship> {
                 new_boosters[i + length] = boosters[i + length];
             }
         }
-
+        
+        //Create a new ship with the new mass and boosters
         Ship s = new Ship(new_mass, new_boosters, size, radius);
-        s.mutate(variance); //As if by random mutation
+        
+        //Mutate the ship to ensure genetic variation, accounting for variance
+        s.mutate(variance);
 
         return s;
 
     }
 
     public void mutate(double variance) {
+        //Mutate a ship by changing its boosters and mass
+        
         for (Booster b : boosters) {
             b.mutate(variance);
         }
 
         if (variance < 1000) {
-            mass += (Math.random() - .5) * .20; //MAKE SURE IS POSITVE
+            mass += (Math.random() - .5) * .20;
         } else {
-            mass += (Math.random() - .5) * .05; //MAKE SURE IS POSITVE
+            mass += (Math.random() - .5) * .05;
         }
 
-        if (mass <= 0) {
+        if (mass <= 0) { //No negative masses allowed, messes up F = ma
             mass = .25 * Math.random();
         }
 
         int multiplier = 1;
-        if (variance < 5000) {
+        if (variance < 5000) { //If variance is too low, crank up the variation
             multiplier = 20;
         }
+        
         //Chance of adding new booster
         if (Math.random() < .01 * multiplier && boosters.length < 10) {
             add_booster();
@@ -142,15 +164,21 @@ public class Ship implements Comparable<Ship> {
     }
 
     public void add_booster() {
+        //Add a new random booster to the ship
+        
         Booster[] new_boosters = new Booster[boosters.length + 1];
+        
         for (int i = 0; i < boosters.length; i++) {
             new_boosters[i] = boosters[i];
         }
+        
         new_boosters[boosters.length] = new Booster();
         boosters = new_boosters;
     }
 
     public void lose_booster() {
+        //Remove a random booster from the ship
+        
         Booster[] new_boosters = new Booster[boosters.length - 1];
         int remove = (int) (Math.random() * boosters.length);
         int offset = 0;
@@ -161,18 +189,22 @@ public class Ship implements Comparable<Ship> {
             new_boosters[i] = boosters[i + offset];
         }
 
-        boosters = new_boosters;
+        boosters = new_boosters; //Overwrite old boosters
     }
 
     public boolean still_alive(int[] target, Obstacle[] obstacles) {
+        //Returns true if ship is alive, otherwise false
+        
+        //Keep track of a "punishment" to aid in accurate scoring of ships
         punishment = 0;
+        
         if (x - radius < 0) {
-            //punishment = 50000;
+            //punishment = 10000;
             return false;
         }
 
         if (x + radius > size) {
-            //punishment = 50000;
+            //punishment = 10000;
             return false;
         }
 
@@ -186,10 +218,12 @@ public class Ship implements Comparable<Ship> {
             return false;
         }
 
+        //If the ship nears the target
         if (Math.pow(Math.pow((target[0] - x), 2) + Math.pow((target[1] - y), 2), .5) <= radius) {
             return false;
         }
 
+        //Punish the ship for hitting an obstacle
         for (Obstacle o : obstacles) {
             if (o.intersects(this)) {
                 punishment = 50000;
@@ -197,14 +231,17 @@ public class Ship implements Comparable<Ship> {
             }
         }
 
+        //Ship is still in free space
         return true;
     }
 
     public double[] get_forces(double time, double dt) {
+        //Sum the forces of the active boosters and return a force vector
+        
         double[] force = new double[]{0, 0};
 
         for (Booster b : boosters) {
-            if (time > b.delay && time < b.end) { //Is activated
+            if (b.is_activated(time)) {
                 force[0] += Math.cos(b.angle) * b.force;
                 force[1] += Math.sin(b.angle) * b.force;
             }
@@ -214,13 +251,16 @@ public class Ship implements Comparable<Ship> {
     }
 
     public void update(double time, double dt) {
+        //Update a ship's PVA, as well as restricting its velocity
+        
         double[] force = get_forces(time, dt);
 
         ax = force[0] / mass;
         ay = force[1] / mass;
         vx += ax * dt;
         vy += ay * dt;
-
+        
+        //Check velocity BEFORE adjusting position
         double[] vel = {vx, vy};
         double mag = Math.sqrt(vel[0] * vel[0] + vel[1] * vel[1]);
 
@@ -237,19 +277,21 @@ public class Ship implements Comparable<Ship> {
     }
 
     public double calculate_score(int[] target, Obstacle[] obstacles) {
+        //Return the ships "distance" as its score, adjusting for its punishment
+        
         score = Math.pow((target[0] - x), 2) + Math.pow((target[1] - y), 2) + punishment;
         for (Obstacle o : obstacles) {
             if (!o.cleared(this)) {
                 score += 10000;
             }
         }
-        was_scored = true;
         return score;
     }
 
     public void draw(Graphics G) {
         //Every ship is a circle of radius 4, with boosters sticking out of length 6 at various angles
         //x and y are assumed to be the center of the ship
+        
         G.setColor(Color.black);
         for (Booster b : boosters) {
             G.fillPolygon(b.get_polygon(x, y, 16));

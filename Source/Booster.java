@@ -16,29 +16,39 @@ class Booster implements Comparable<Booster> {
     double angle, delay, end, force;
 
     public Booster(double angle, double delay, double end, double force) {
+        //Constructor used for creating a pre-defined booster
+
         this.angle = angle;
         this.delay = delay;
         this.end = end;
         this.force = force;
     }
 
-    public int compareTo(Booster other) {
-        Double d = new Double(angle);
-        return d.compareTo(other.angle);
-    }
-
     public Booster() {
+        //Constructor used for creating a random booster;
+
         this.angle = 2 * Math.PI * Math.random();
         this.delay = 100 * Math.random();
         this.end = 200 * Math.random();
         this.force = 10 * Math.random();
     }
 
+    public int compareTo(Booster other) {
+        //Returns comparison of booster angles for purpose of sorting boosters
+
+        Double d = new Double(angle);
+        return d.compareTo(other.angle);
+    }
+
     public Booster copy() {
-        return new Booster(this.angle, this.delay, this.force, this.end);
+        //Returns a copy of a booster with no shared pointers
+
+        return new Booster(angle, delay, force, end);
     }
 
     public Booster mate(Booster other) {
+        //Returns a new "offspring" booster created from two booster parents
+
         double new_angle = Math.random() < .5 ? angle : other.angle;
         double new_delay = Math.random() < .5 ? delay : other.delay;
         double new_end = Math.random() < .5 ? end : other.end;
@@ -48,21 +58,35 @@ class Booster implements Comparable<Booster> {
     }
 
     public void mutate(double variance) {
+        //Randomly mutates a booster's angle, delay, end, and force
+
         int multiplier = 1;
-        
-        if (variance < 5000) {
+
+        if (variance < 5000) { //If the variance is too low, crank up the variation
             multiplier = 4;
         }
-        angle += multiplier*.05 * (Math.random() - .5);
-        delay += multiplier*(Math.random() - .5) * .05;
-        end += multiplier*(Math.random() - .5) * .05;
-        force += multiplier*(Math.random() - .5) * .05;
+        angle += multiplier * .05 * (Math.random() - .5);
+        delay += multiplier * (Math.random() - .5) * .05;
+        end += multiplier * (Math.random() - .5) * .05;
+        force += multiplier * (Math.random() - .5) * .05;
         /*if (force > 10) {
             force = 10;
         }*/
     }
 
+    public boolean is_activated(double time) {
+        //True if the booster is within the critical range, false otherwise
+
+        return time > delay && time < end;
+    }
+
     public Polygon get_polygon(double x, double y, double length) {
+        /*
+        Returns a bounding polygon, 
+        angle shifted to appear pointing away from where its force is applied, 
+        like real life.
+         */
+
         Polygon p = new Polygon();
         int l = 2;
         angle += Math.PI;
