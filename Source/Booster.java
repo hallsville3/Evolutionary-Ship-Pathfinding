@@ -12,6 +12,7 @@ import java.awt.Polygon;
  * @author chasehanson
  */
 class Booster implements Comparable<Booster> {
+    //Each booster has variables that determine its force, angle, and firing window
 
     double angle, delay, end, force;
 
