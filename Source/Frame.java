@@ -9,6 +9,8 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JPanel;
 
 /**
@@ -20,18 +22,27 @@ class Frame extends JPanel {
 
     ShipPool p;
     Obstacle[] obstacles;
+    Scorer s;
     boolean toggle;
+    ArrayList<int[]> line;
+    int SCALE;
 
     public Frame(ShipPool p, Obstacle[] obstacles) {
         //Contruct a frame with a given ship pool and obstacles
 
         super();
         this.p = p;
+        s = null;
         this.obstacles = obstacles;
-
+        SCALE = 1;
         toggle = true; //True if simulation is active
     }
-
+    
+    public void set_line(ArrayList<int[]> line, int sc) {
+        SCALE = sc;
+        this.line = line;
+    }
+    
     public void set(ShipPool p, Obstacle[] obstacles) {
         //Update the stored ship pool and obstacles
 
@@ -68,5 +79,11 @@ class Frame extends JPanel {
         }
 
         p.draw(G);
+        G.setColor(Color.black);
+        if (line != null) {
+            for (int i = 0; i<line.size()-1; i++) {
+                G.drawLine(SCALE*line.get(i)[0], SCALE*line.get(i)[1], SCALE*line.get(i+1)[0], SCALE*line.get(i+1)[1]);
+            }
+        }
     }
 }

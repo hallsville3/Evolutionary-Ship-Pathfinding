@@ -15,7 +15,7 @@ import java.awt.Graphics;
 public class Ship implements Comparable<Ship> {
     //Each Ship object holds many Boosters that direct it in various directions
 
-    double mass, score;
+    double mass, score, rate;
     int n_boosters, size, radius, punishment;
     Booster[] boosters;
     boolean alive;
@@ -28,7 +28,7 @@ public class Ship implements Comparable<Ship> {
      * @param size
      * @param radius
      */
-    public Ship(double mass, Booster[] boosters, int size, int radius) {
+    public Ship(double mass, Booster[] boosters, int size, int radius, double rate) {
         //Constructor used for creating a pre-defined ship
         
         this.mass = mass;
@@ -36,6 +36,7 @@ public class Ship implements Comparable<Ship> {
         n_boosters = boosters.length;
         score = 0;
         alive = true;
+        this.rate = rate;
 
         reset_pva(size, radius);
     }
@@ -45,7 +46,7 @@ public class Ship implements Comparable<Ship> {
      * @param size
      * @param radius
      */
-    public Ship(int size, int radius) {
+    public Ship(int size, int radius, double rate) {
         //Constructor used for creating a random ship
         
         n_boosters = (int) (6 * Math.random());
@@ -56,6 +57,7 @@ public class Ship implements Comparable<Ship> {
 
         populate_boosters(); //Get random boosters
         reset_pva(size, radius);
+        this.rate = rate;
     }
 
     /**
@@ -95,7 +97,7 @@ public class Ship implements Comparable<Ship> {
         for (int i = 0; i < new_boosters.length; i++) {
             new_boosters[i] = this.boosters[i].copy();
         }
-        return new Ship(this.mass, this.boosters, size, radius);
+        return new Ship(this.mass, this.boosters, size, radius, rate);
     }
 
     /**
@@ -148,10 +150,8 @@ public class Ship implements Comparable<Ship> {
         }
 
         //Fill in the booster "gaps" with parent boosters
-        for (int i = 0; i < l1 - length; i++) {
-            if (i + length < boosters.length && i + length < other.boosters.length) {
-                new_boosters[i + length] = Math.random() < .5 ? boosters[i + length] : other.boosters[i + length];
-            } else if (i + length < other.boosters.length) {
+        for (int i = 0; i < new_boosters.length-length; i++) {
+            if (i + length < other.boosters.length) {
                 new_boosters[i + length] = other.boosters[i + length];
             } else if (i + length < boosters.length) {
                 new_boosters[i + length] = boosters[i + length];
@@ -159,7 +159,7 @@ public class Ship implements Comparable<Ship> {
         }
 
         //Create a new ship with the new mass and boosters
-        Ship s = new Ship(new_mass, new_boosters, size, radius);
+        Ship s = new Ship(new_mass, new_boosters, size, radius, rate);
 
         //Mutate the ship to ensure genetic variation, accounting for variance
         s.mutate(variance);
@@ -174,33 +174,32 @@ public class Ship implements Comparable<Ship> {
      */
     public void mutate(double variance) {
         //Mutate a ship by changing its boosters and mass
-
+        
+        int multiplier = 1;
+        if (variance < 50) { //If variance is too low, crank up the variation
+            multiplier = 50;
+        }
+        
+        
         for (Booster b : boosters) {
-            b.mutate(variance);
+            b.mutate(multiplier, rate);
         }
 
-        if (variance < 1000) {
-            mass += (Math.random() - .5) * .20;
-        } else {
-            mass += (Math.random() - .5) * .05;
-        }
+        mass += (Math.random() - .5) * rate * multiplier;
 
         if (mass <= 0) { //No negative masses allowed, messes up F = ma
             mass = .25 * Math.random();
         }
 
-        int multiplier = 1;
-        if (variance < 5000) { //If variance is too low, crank up the variation
-            multiplier = 20;
-        }
+        
 
         //Chance of adding new booster
-        if (Math.random() < .01 * multiplier && boosters.length < 10) {
+        if (Math.random() < rate/5.0 * multiplier) {
             add_booster();
         }
 
         //Chance of losing a booster
-        if (Math.random() < .01 * multiplier && boosters.length > 1) {
+        if (Math.random() < rate/5.0 * multiplier && boosters.length > 1) {
             lose_booster();
         }
 
@@ -254,22 +253,22 @@ public class Ship implements Comparable<Ship> {
         punishment = 0;
 
         if (x - radius < 0) {
-            //punishment = 10000;
+            punishment = 0;
             return false;
         }
 
         if (x + radius > size) {
-            //punishment = 10000;
+            punishment = 0;
             return false;
         }
 
         if (y - radius < 0) {
-            //punishment = 50000;
+            punishment = 0;
             return false;
         }
 
         if (y + radius > size) {
-            //punishment = 50000;
+            punishment = 0;
             return false;
         }
 
@@ -281,7 +280,7 @@ public class Ship implements Comparable<Ship> {
         //Punish the ship for hitting an obstacle
         for (Obstacle o : obstacles) {
             if (o.intersects(this)) {
-                punishment = 50000;
+                punishment = 0;
                 return false;
             }
         }
@@ -340,24 +339,6 @@ public class Ship implements Comparable<Ship> {
         x += vx * dt;
         y += vy * dt;
 
-    }
-
-    /**
-     *
-     * @param target an array storing the x and y coordinates of a target
-     * @param obstacles an array of obstacles which need to be avoided
-     * @return the score this ship received for its work during this simulation
-     */
-    public double calculate_score(int[] target, Obstacle[] obstacles) {
-        //Return the ships "distance" as its score, adjusting for its punishment
-
-        score = Math.pow((target[0] - x), 2) + Math.pow((target[1] - y), 2) + punishment;
-        for (Obstacle o : obstacles) {
-            if (!o.cleared(this)) {
-                score += 10000;
-            }
-        }
-        return score;
     }
 
     /**

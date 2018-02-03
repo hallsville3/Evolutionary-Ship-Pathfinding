@@ -32,6 +32,11 @@ public class Obstacle {
         G.setColor(Color.black);
         G.fillRect(x, y, width, height);
     }
+    
+    public boolean contains(int x, int y) {
+        return this.x <= x && x <= this.x + this.width &&
+               this.y <= y && y <= this.y + this.height;
+    }
 
     public boolean intersects(Ship s) {
         //Returns true if the ship intersects the obstacle, otherwise false

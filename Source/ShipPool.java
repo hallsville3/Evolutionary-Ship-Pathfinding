@@ -24,8 +24,9 @@ public class ShipPool {
     boolean working;
     Ship[] ships;
     int[] target;
+    double rate;
 
-    public ShipPool(int n, int size, int ship_radius) {
+    public ShipPool(int n, int size, int ship_radius, double rate) {
         /*Constructor for creating a ship pool of size n, 
         with a screen size of "size" and a ship radius of ship_radius
          */
@@ -37,6 +38,7 @@ public class ShipPool {
         working = false;
         target = new int[]{250, 100};
         variance = 0;
+        this.rate = rate;
     }
 
     public void generate_ships() {
@@ -44,7 +46,7 @@ public class ShipPool {
 
         ships = new Ship[n];
         for (int i = 0; i < n; i++) {
-            ships[i] = new Ship(size, radius);
+            ships[i] = new Ship(size, radius, rate);
         }
     }
 
@@ -118,14 +120,6 @@ public class ShipPool {
 
         for (int i = 0; i < survived; i++) {
             new_generation[i] = parents[ints[i]].copy();
-            if (Math.random() < .05) {
-                /*
-                Change this parent a bit, to prevent stagnation
-                This way we ensure no parents live on forever unchanged
-                 */
-                new_generation[i].mutate(variance);
-
-            }
         }
 
         int required_children = n - survived;
@@ -141,7 +135,7 @@ public class ShipPool {
 
     }
 
-    public int score_ships(Frame f, Obstacle[] obstacles, double end_time, double dt, double speed, boolean display) throws InterruptedException {
+    public double score_ships(Frame f, Obstacle[] obstacles, double end_time, double dt, double speed, boolean display) throws InterruptedException {
         //Scores all the ships in a simulation, optionally displaying it
 
         double time = 0;
@@ -179,8 +173,16 @@ public class ShipPool {
         double score = 0;
 
         //Determine the best score of the ships
-        for (Ship s : ships) {
-            score = s.calculate_score(target, obstacles);
+        Scorer scorer = new Scorer(obstacles, ships, target, size, size);
+        scorer.run();
+        f.set_line(scorer.finished_line, scorer.SCALE);
+        f.repaint();
+        Thread.sleep(1000);
+        f.set_line(null, scorer.SCALE);
+        
+        for (int i = 0; i<ships.length; i++) {
+            score = scorer.scores[i];
+            ships[i].score = score;
             if (score < best) {
                 best = score;
             }
@@ -188,7 +190,7 @@ public class ShipPool {
 
         //Calculate the variation for the next frame
         variance = Math.abs(last_score - best);
-        if (best < 1000) {
+        if (best < 30) {
             variance = 1000000;
         }
 
@@ -197,7 +199,7 @@ public class ShipPool {
         //Do the next generation, accounting for the scores of this generation
         do_generation();
 
-        return (int) best;
+        return best;
     }
 
     public void draw(Graphics G) {
@@ -213,9 +215,9 @@ public class ShipPool {
     public void do_generation() {
         //Do one generation of mating, accounting for the scores received
 
-        int best_count = 10;
+        int best_count = 5;
         int kill_count = 0;
-        int leave_count = 0;
+        int leave_count = 5;
 
         //Get top best_count ships from the array of n
         Ship[] best = get_n_best(best_count);

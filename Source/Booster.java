@@ -29,7 +29,7 @@ class Booster implements Comparable<Booster> {
         //Constructor used for creating a random booster;
 
         this.angle = 2 * Math.PI * Math.random();
-        this.delay = 100 * Math.random();
+        this.delay = 200 * Math.random();
         this.end = 200 * Math.random();
         this.force = 10 * Math.random();
     }
@@ -58,21 +58,14 @@ class Booster implements Comparable<Booster> {
         return new Booster(new_angle, new_delay, new_end, new_force);
     }
 
-    public void mutate(double variance) {
+    public void mutate(int multiplier, double rate) {
         //Randomly mutates a booster's angle, delay, end, and force
 
-        int multiplier = 1;
+        angle += multiplier * (Math.random() - .5) * rate;
+        delay += multiplier * (Math.random() - .5) * rate;
+        end += multiplier * (Math.random() - .5) * rate;
+        force += multiplier * (Math.random() - .5) * rate;
 
-        if (variance < 5000) { //If the variance is too low, crank up the variation
-            multiplier = 4;
-        }
-        angle += multiplier * .05 * (Math.random() - .5);
-        delay += multiplier * (Math.random() - .5) * .05;
-        end += multiplier * (Math.random() - .5) * .05;
-        force += multiplier * (Math.random() - .5) * .05;
-        /*if (force > 10) {
-            force = 10;
-        }*/
     }
 
     public boolean is_activated(double time) {
