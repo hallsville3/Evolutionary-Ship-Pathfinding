@@ -8,6 +8,7 @@ package genetic;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  *
@@ -15,8 +16,8 @@ import java.util.ArrayList;
  */
 public class Scorer {
 
-    Obstacle[] obstacles;
-    Ship[] ships;
+    ArrayList<Obstacle> obstacles;
+    ArrayList<Ship> ships;
     double[] scores;
     int[] target;
     
@@ -35,7 +36,7 @@ public class Scorer {
     private final int height;
     double best_score;
 
-    public Scorer(Obstacle[] obstacles, Ship[] ships, int[] target, int width, int height) throws InterruptedException {
+    public Scorer(ArrayList<Obstacle> obstacles, ArrayList<Ship> ships, int[] target, int width, int height) throws InterruptedException {
         this.obstacles = obstacles;
         this.ships = ships;
         this.target = target;
@@ -118,10 +119,10 @@ public class Scorer {
     }
 
     public void get_scores(){
-        scores = new double[ships.length];
+        scores = new double[ships.size()];
         for (int i = 0; i<scores.length; i++) {
-            A_Star(new int[] {(int)ships[i].x/SCALE, (int)ships[i].y/SCALE}, new int[] {target[0]/SCALE, target[1]/SCALE});//?????
-            scores[i] = calculate_score(ships[i]);
+            A_Star(new int[] {(int)ships.get(i).x/SCALE, (int)ships.get(i).y/SCALE}, new int[] {target[0]/SCALE, target[1]/SCALE});//?????
+            scores[i] = calculate_score(ships.get(i));
         }
     }
 
@@ -131,7 +132,7 @@ public class Scorer {
 
     public void A_Star(int[] start, int[] end) {
         g_values[start[0]][start[1]] = 0;
-        f_values[start[0]][start[1]]  = heuristic(start, end);
+        f_values[start[0]][start[1]] = heuristic(start, end);
         lastCheckedNode = start;
         
         openSet = new ArrayList<int[]>();
@@ -163,18 +164,31 @@ public class Scorer {
         ArrayList<int[]> line = new ArrayList<>();
         double the_cost = 0;
         int[] last = {0, 0};
-        while (came_from_values[current[0]][current[1]] != null && score < 10000) {
-            the_cost = cost(current, came_from_values[current[0]][current[1]]);
-            score += the_cost;
-            line.add(current);
-            last = current;
-            current = came_from_values[current[0]][current[1]];
+        if (current != null) {
+            while (came_from_values[current[0]][current[1]] != null && score < 10000) {
+                the_cost = cost(current, came_from_values[current[0]][current[1]]);
+                score += the_cost;
+                line.add(current);
+                last = current;
+                current = came_from_values[current[0]][current[1]];
+                if (current == null) {
+                    break;
+                }
+            }
         }
-       
-        line.add(current);
+
+        if (current != null) {
+            line.add(current);
+        }
+
         score -= the_cost;
         score += cost(new int[] {(int)s.x/SCALE, (int)s.y/SCALE}, last);
-        
+
+        if (distance(new int[]{(int)s.x, (int)s.y}, target) < 50) {
+            score = distance(new int[]{(int)s.x, (int)s.y}, target);
+
+        }
+
         score += s.punishment;
         if (score < best_score) {
             set_line(line);

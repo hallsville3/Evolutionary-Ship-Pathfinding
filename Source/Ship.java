@@ -7,6 +7,7 @@ package genetic;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.util.ArrayList;
 
 /**
  *
@@ -16,10 +17,12 @@ public class Ship implements Comparable<Ship> {
     //Each Ship object holds many Boosters that direct it in various directions
 
     double mass, score, rate;
-    int n_boosters, size, radius, punishment;
-    Booster[] boosters;
+    int n_boosters, size, radius, punishment, currentBooster;
+    double relativeTime;
+    ArrayList<Booster> boosters;
     boolean alive;
     double x, y, vx, vy, ax, ay;
+    double booster_delay;
 
     /**
      *
@@ -28,12 +31,12 @@ public class Ship implements Comparable<Ship> {
      * @param size
      * @param radius
      */
-    public Ship(double mass, Booster[] boosters, int size, int radius, double rate) {
+    public Ship(double mass, ArrayList<Booster> boosters, int size, int radius, double rate) {
         //Constructor used for creating a pre-defined ship
         
         this.mass = mass;
         this.boosters = boosters;
-        n_boosters = boosters.length;
+        n_boosters = boosters.size();
         score = 0;
         alive = true;
         this.rate = rate;
@@ -51,7 +54,7 @@ public class Ship implements Comparable<Ship> {
         
         n_boosters = (int) (6 * Math.random());
         this.mass = 5 * Math.random();
-        this.boosters = new Booster[n_boosters];
+        this.boosters = new ArrayList<Booster>();
         score = 0;
         alive = true;
 
@@ -77,12 +80,15 @@ public class Ship implements Comparable<Ship> {
         vy = 0;
         ax = 0;
         ay = 0;
+        currentBooster = 0;
+        relativeTime = 0;
+        booster_delay = 0;
     }
 
     public int compareTo(Ship other) {
         //Returns comparison of ship scores for purpose of sorting ships
         
-        Double s = new Double(score);
+        Double s = score;
         return s.compareTo(other.score);
     }
 
@@ -93,11 +99,11 @@ public class Ship implements Comparable<Ship> {
     public Ship copy() {
         //Creates an exact copy of a ship with no shared pointers
         
-        Booster[] new_boosters = new Booster[this.boosters.length];
-        for (int i = 0; i < new_boosters.length; i++) {
-            new_boosters[i] = this.boosters[i].copy();
+        ArrayList<Booster> new_boosters = new ArrayList<>();
+        for (int i = 0; i < boosters.size(); i++) {
+            new_boosters.add(this.boosters.get(i).copy());
         }
-        return new Ship(this.mass, this.boosters, size, radius, rate);
+        return new Ship(this.mass, new_boosters, size, radius, rate);
     }
 
     /**
@@ -107,7 +113,7 @@ public class Ship implements Comparable<Ship> {
         //Creates n_boosters random boosters in the ship
         
         for (int i = 0; i < n_boosters; i++) {
-            boosters[i] = new Booster();
+            boosters.add(new Booster());
         }
     }
 
@@ -137,26 +143,17 @@ public class Ship implements Comparable<Ship> {
 
         //sort_boosters();
         //other.sort_boosters();
-        double new_mass = Math.random() < .5 ? mass : other.mass;
+        double new_mass = (mass + other.mass) / 2;
 
-        Booster[] new_boosters = new Booster[Math.random() < .5 ? boosters.length : other.boosters.length];
+        ArrayList<Booster> new_boosters = new ArrayList<Booster>();
 
-        int l1 = new_boosters.length;
-        int length = Math.min(boosters.length, other.boosters.length);
+        int length = Math.min(boosters.size(), other.boosters.size());
 
         //Get new boosters from offspring of parents' boosters
         for (int i = 0; i < length; i++) {
-            new_boosters[i] = boosters[i].mate(other.boosters[i]);
+            new_boosters.add(boosters.get(i).mate(other.boosters.get(i)));
         }
 
-        //Fill in the booster "gaps" with parent boosters
-        for (int i = 0; i < new_boosters.length-length; i++) {
-            if (i + length < other.boosters.length) {
-                new_boosters[i + length] = other.boosters[i + length];
-            } else if (i + length < boosters.length) {
-                new_boosters[i + length] = boosters[i + length];
-            }
-        }
 
         //Create a new ship with the new mass and boosters
         Ship s = new Ship(new_mass, new_boosters, size, radius, rate);
@@ -192,16 +189,30 @@ public class Ship implements Comparable<Ship> {
         }
 
         
-
+        //Chance of losing a booster
+        /*
+        if (Math.random() < rate/5.0 * multiplier && boosters.size() > 1) {
+            lose_booster();
+        }
+        
+        
         //Chance of adding new booster
         if (Math.random() < rate/5.0 * multiplier) {
             add_booster();
         }
+         */
 
-        //Chance of losing a booster
-        if (Math.random() < rate/5.0 * multiplier && boosters.length > 1) {
+        if (Math.random() < .5 && boosters.size() > 1) {
             lose_booster();
         }
+
+
+        //Chance of adding new booster
+        if (Math.random() < .5 * multiplier) {
+            add_booster();
+        }
+
+        
 
     }
 
@@ -211,14 +222,7 @@ public class Ship implements Comparable<Ship> {
     public void add_booster() {
         //Add a new random booster to the ship
 
-        Booster[] new_boosters = new Booster[boosters.length + 1];
-
-        for (int i = 0; i < boosters.length; i++) {
-            new_boosters[i] = boosters[i];
-        }
-
-        new_boosters[boosters.length] = new Booster();
-        boosters = new_boosters;
+        boosters.add(new Booster());
     }
 
     /**
@@ -227,17 +231,8 @@ public class Ship implements Comparable<Ship> {
     public void lose_booster() {
         //Remove a random booster from the ship
 
-        Booster[] new_boosters = new Booster[boosters.length - 1];
-        int remove = (int) (Math.random() * boosters.length);
-        int offset = 0;
-        for (int i = 0; i < boosters.length - 1; i++) {
-            if (i == remove) {
-                offset = 1;
-            }
-            new_boosters[i] = boosters[i + offset];
-        }
-
-        boosters = new_boosters; //Overwrite old boosters
+        int index = (int)(Math.random()*(boosters.size()));
+        boosters.remove(index);
     }
 
     /**
@@ -246,7 +241,7 @@ public class Ship implements Comparable<Ship> {
      * @param obstacles an array of obstacles which need to be avoided
      * @return true if the ship hasn't struck anything, otherwise false
      */
-    public boolean still_alive(int[] target, Obstacle[] obstacles) {
+    public boolean still_alive(int[] target, ArrayList<Obstacle> obstacles) {
         //Returns true if ship is alive, otherwise false
 
         //Keep track of a "punishment" to aid in accurate scoring of ships
@@ -300,11 +295,27 @@ public class Ship implements Comparable<Ship> {
 
         double[] force = new double[]{0, 0};
 
-        for (Booster b : boosters) {
-            if (b.is_activated(time)) {
-                force[0] += Math.cos(b.angle) * b.force;
-                force[1] += Math.sin(b.angle) * b.force;
+        if (currentBooster >= boosters.size()) {
+            return force;
+        }
+
+        Booster b = boosters.get(currentBooster);
+        if (b.remainingDelay > 0) {
+            b.remainingDelay -= dt;
+            return force;
+        }
+        if (boosters.get(currentBooster).is_activated(time - relativeTime)) {
+            force[0] = Math.cos(b.angle) * b.force;
+            force[1] = Math.sin(b.angle) * b.force;
+        } else {
+            relativeTime = time;
+            boosters.get(currentBooster).resetDelay();
+            currentBooster++;
+            if (currentBooster >= boosters.size()) {
+                return force;
             }
+            force[0] = Math.cos(b.angle) * b.force;
+            force[1] = Math.sin(b.angle) * b.force;
         }
 
         return force;

@@ -21,13 +21,13 @@ class Frame extends JPanel {
     //The window that the ships, obstacles and the target are drawn into
 
     ShipPool p;
-    Obstacle[] obstacles;
+    ArrayList<Obstacle> obstacles;
     Scorer s;
     boolean toggle;
     ArrayList<int[]> line;
     int SCALE;
 
-    public Frame(ShipPool p, Obstacle[] obstacles) {
+    public Frame(ShipPool p, ArrayList<Obstacle> obstacles) {
         //Contruct a frame with a given ship pool and obstacles
 
         super();
@@ -43,7 +43,7 @@ class Frame extends JPanel {
         this.line = line;
     }
     
-    public void set(ShipPool p, Obstacle[] obstacles) {
+    public void set(ShipPool p, ArrayList<Obstacle> obstacles) {
         //Update the stored ship pool and obstacles
 
         this.p = p;

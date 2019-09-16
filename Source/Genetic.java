@@ -6,6 +6,7 @@
 package genetic;
 
 import javax.swing.JFrame;
+import java.util.ArrayList;
 
 /**
  *
@@ -15,20 +16,20 @@ public class Genetic {
     //Base Class for Pathfinding Genetic Algorithm
 
     public static void main(String[] args) throws InterruptedException {
-        int n = 100;
+        int n = 1000;
         double dt = .05;
         int size = 500;
         int radius = 5;
-        double rate = .05;
+        double rate = .2;
+        int[] target = {250, 250};
         
-        ShipPool pool = new ShipPool(n, size, radius, rate);
+        ShipPool pool = new ShipPool(n, size, radius, rate, target);
 
-        Obstacle[] obstacles = new Obstacle[4]; //Array of black Obstacle bars
+        ArrayList<Obstacle> obstacles = new ArrayList<>(); //Array of black Obstacle bars
 
-        obstacles[0] = new Obstacle(0, 200, 300, 20);
-        obstacles[1] = new Obstacle(350, 300, 150, 20);
-        obstacles[2] = new Obstacle(120, 400, 190, 20);
-        obstacles[3] = new Obstacle(100, 200, 20, 300);
+        obstacles.add(new Obstacle(100, 300, 300, 20));
+        obstacles.add(new Obstacle(100, 100, 20, 200));
+        obstacles.add(new Obstacle(380, 100, 20, 200));
 
         //Frame setup
         Frame frame = new Frame(pool, obstacles);
@@ -44,7 +45,7 @@ public class Genetic {
         int gen = 1;
         double speed = 25;
 
-        int gen_skip = 20; //Generations between each displayed generation
+        int gen_skip = 5; //Generations between each displayed generation
         double score = 0;
 
         score = pool.score_ships(frame, obstacles, end_time, dt, speed, true);
@@ -58,7 +59,6 @@ public class Genetic {
                 score = pool.score_ships(frame, obstacles, end_time, dt, speed, false);
                 //screen.setTitle("Generation: " + gen + " Best: " + (double)Math.round(score * 1000d) / 1000d);
                 //screen.repaint();
-                Thread.sleep(1);
             }
             gen++;
             frame.resume();
